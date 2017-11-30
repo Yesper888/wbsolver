@@ -1,0 +1,6 @@
+5 6 5 4 
+AGBS
+TOAK
+SDIR
+ATOE
+PHTS

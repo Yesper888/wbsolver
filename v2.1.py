@@ -1,11 +1,25 @@
 """
-Optimizing the other wordbrain solver
+Authors: Joseph Rios, Kyle Finter, Mckenzie Riley, Leonard Museau
+
+Description: Outputs possible solutions to WordBrain Puzzles
+
+Usage:
+    Command: python v2.1.py <puzzle-file>.txt
+    File Format:
+    <List of lengths of hints separated by spaces>
+    <Lines of the puzzle>
+
 """
 import sys
 import time
 words = []
 
 def solve(puzzle,hint):
+    """
+    Input: a puzzle (list of strings) and list of hints (list of int)
+    Output: a list of lists of paths that match each of the hints and map to valid english words
+        + Path: a list of pairs representing coordinates in the puzzle
+    """
     result = []
     hintSet = set(hint)
     maxHint = max(hint)
@@ -23,7 +37,14 @@ def solve(puzzle,hint):
         
 
 def getPaths(puzzle,hintSet,maxHint):
-    #Helper function for getPathR
+    """
+    Helper function for getPathR
+    Input: A puzzle (list of strings), a set of hints (for const time lookups), and the maxHint of the hint list
+    Output: A list of paths that are valid words (appropriate length and an english word)
+
+    + Works by calling getPathR on each tile with a letter in it
+    + It also combines each list of paths from getPathR into result
+    """
     result = []
     for x in range(len(puzzle)):
         for y in range(len(puzzle[x])):
@@ -32,7 +53,14 @@ def getPaths(puzzle,hintSet,maxHint):
     return result
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
-    #Recursive Get Path Function
+    """
+    Recursive Get Path Function
+    Input:  A puzzle (list of strings)
+            A hintSet (a set of hints)
+            A maxHint (precomputed maximum of the hintSet)
+            A currPath (path so far, initially is just one tile)
+    Output: A list of paths that are valid words
+    """
     x,y = currPath[-1]
     result = []
     #Distributing Coords for edge cases
@@ -68,6 +96,12 @@ def getPathR(puzzle,hintSet,maxHint,currPath):
     return result
                 
 def remove(puzzle,path):
+    """
+    Input:  A list of strings representing a puzzle, and 
+            A list of pairs representing a list path
+    Output: A puzzle with the path replaced with spaces
+            and shifted down.
+    """
     new = puzzle[:]
     #Convert each string to list, because strings are immutable
     for i in range(len(new)):
