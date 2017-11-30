@@ -12,6 +12,8 @@ Usage:
 """
 import sys
 import time
+import threading
+import queue
 words = []
 
 def solve(puzzle,hint):
@@ -170,13 +172,32 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
-def loadRelevantWords(wordFile,rLst):
+def loadRelevantWords(wordFile,rLst,numThreads):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
+    l = open(wordFile).read().split('\n')
+    listOfWords = list(l)
+
+    numExtraWords = len(listOfWords)%int(numThreads)#remainder of list of words % number of threads
+    extraWords = []
+    for index in range(numExtraWords):
+        extraWords.append(listOfWords.pop())#remove words to divide without remainder
+        
+    equalLength = int(len(listOfWords)/int(numThreads))#Length of equal parts
+    listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
+    
+    #put extra words one by one into each list to balance as close as possible
+    print(extraWords)
+    i=0
+    for word in extraWords:
+        listOfWords[i].append(word)
+        i+=1
+    print(listOfWords)
+        
     with open(wordFile,'r') as f:
-        for line in f:
+        for line in f:            
             tempLst = rLst[:]
             line = line.strip().upper()#should already be uppercase
             flag = True
@@ -190,7 +211,7 @@ def loadRelevantWords(wordFile,rLst):
                 words.append(line)
                     
 
-def main(fileName):
+def main(fileName, numThreads):
     puzzle = [] #list of strings
     hint = [] #list of integers
     data = [] #list of lines from the file
@@ -205,7 +226,7 @@ def main(fileName):
         for char in line:
             rLst[ord(char)-65]+=1
     t = time.time()
-    loadRelevantWords("words2.txt",rLst)
+    loadRelevantWords("cat1.txt",rLst,numThreads)
     print(len(words),"words loaded in",time.time()-t,"seconds")
     #for path in getPaths(puzzle,hint):
     #    print(ptw(puzzle,path))
@@ -215,7 +236,7 @@ def main(fileName):
     print("Solved in",time.time()-t,"seconds")
 
 if(__name__=="__main__"):
-    if(len(sys.argv)==2):
-        main(sys.argv[1])
+    if(len(sys.argv)==3):
+        main(sys.argv[1], sys.argv[2])
     else:
         print("Invalid number of arguments")
