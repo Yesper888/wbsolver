@@ -21,7 +21,7 @@ def serial_test(wordFile,numTrials):
         data = f.readlines()
     for line in data:
         solutions.append(line.split())
-    TOTAL = 5 #len(solutions)
+    TOTAL = len(solutions) #Change this line to only test a portion of the puzzles
     puzzleSize = [0 for i in range(TOTAL)]
     loadTime = [0 for i in range(TOTAL)]
     loadSize = [0 for i in range(TOTAL)]
@@ -34,7 +34,7 @@ def serial_test(wordFile,numTrials):
             data = f.readlines()
         hint = list(map(lambda x: int(x),data[0].split()))
         puzzle = list(map(lambda x: x.strip().upper(), data[1:]))
-        rLst = [0 for i in range(26)]
+        rLst = [0 for j in range(26)]
         for line in puzzle:
             for char in line:
                 puzzleSize[i]+=1
@@ -86,11 +86,11 @@ def recordResults(puzzleSize,loadSize,loadTime,solveTime,success):
             success[i] = 0
     with open("results.csv",'w',newline='') as csvfile:
         w = csv.writer(csvfile,delimiter=',', quotechar='"', quoting=csv.QUOTE_NONE)
-        w.writerow(puzzleSize)
-        w.writerow(loadSize)
-        w.writerow(loadTime)
-        w.writerow(solveTime)
-        w.writerow(success)
+        w.writerow(["Puzzle Size"]+puzzleSize)
+        w.writerow(["Load Size"]+loadSize)
+        w.writerow(["Load Time"]+loadTime)
+        w.writerow(["Solve Time"]+solveTime)
+        w.writerow(["Success"]+success)
 
 
 if(__name__=="__main__"):
