@@ -15,6 +15,8 @@ import time
 import threading
 import queue
 words = []
+threadList=[]
+result=[]
 
 def solve(puzzle,hint):
     """
@@ -38,7 +40,7 @@ def solve(puzzle,hint):
     return result
         
 
-def getPaths(puzzle,hintSet,maxHint):
+def getPaths(puzzle,hintSet,maxHint,numThreads):
     """
     Helper function for getPathR
     Input: A puzzle (list of strings), a set of hints (for const time lookups), and the maxHint of the hint list
@@ -48,11 +50,25 @@ def getPaths(puzzle,hintSet,maxHint):
     + It also combines each list of paths from getPathR into result
     """
     result = []
+    que = queue.Queue()
+    
+    for i in range(numThreads):
+        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,hintSet,maxHint,que])
+        threadList.append(t)
+        t.start()
+        
+    for t in threadList:
+        t.join()
+    
+    return que.join()
+    
+def threadGetPaths(puzzle,hintSet,maxHint,que):
     for x in range(len(puzzle)):
         for y in range(len(puzzle[x])):
             if(puzzle[x][y]!=" "):
-                result+=getPathR(puzzle,hintSet,maxHint,[(x,y)])
-    return result
+                que.put(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
+    #result.append(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
+    return
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
     """
@@ -189,27 +205,33 @@ def loadRelevantWords(wordFile,rLst,numThreads):
     listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
     
     #put extra words one by one into each list to balance as close as possible
-    print(extraWords)
     i=0
     for word in extraWords:
         listOfWords[i].append(word)
         i+=1
-    print(listOfWords)
+
+    for i in range(numThreads):
+        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
+        threadList.append(t)
+        t.start()
         
-    with open(wordFile,'r') as f:
-        for line in f:            
-            tempLst = rLst[:]
-            line = line.strip().upper()#should already be uppercase
-            flag = True
-            for char in line:
-                if(tempLst[ord(char)-65]==0):
-                    flag = False
-                    break
-                else:
-                    tempLst[ord(char)-65]-=1
-            if(flag):
-                words.append(line)
-                    
+    for t in threadList:
+        t.join()
+
+def threadLoadWords(wordList, rLst):
+    for word in wordList:
+        tempLst = rLst[:]
+        word = word.strip().upper()#should already be uppercase
+        flag = True
+        for char in word:
+            if(tempLst[ord(char)-65]==0):
+                flag = False
+                break
+            else:
+                tempLst[ord(char)-65]-=1
+        if(flag):
+            words.append(word)
+            
 
 def main(fileName, numThreads):
     puzzle = [] #list of strings
@@ -226,10 +248,11 @@ def main(fileName, numThreads):
         for char in line:
             rLst[ord(char)-65]+=1
     t = time.time()
-    loadRelevantWords("cat1.txt",rLst,numThreads)
+    loadRelevantWords("words2.txt",rLst,numThreads)
+    #print(words)
     print(len(words),"words loaded in",time.time()-t,"seconds")
-    #for path in getPaths(puzzle,hint):
-    #    print(ptw(puzzle,path))
+    for path in getPaths(puzzle,hint, max(hint),numThreads):
+        print(ptw(puzzle,path))
     t = time.time()
     for soln in solve(puzzle,hint):
         print(soln)
@@ -237,6 +260,6 @@ def main(fileName, numThreads):
 
 if(__name__=="__main__"):
     if(len(sys.argv)==3):
-        main(sys.argv[1], sys.argv[2])
+        main(sys.argv[1], int(sys.argv[2]))
     else:
         print("Invalid number of arguments")
