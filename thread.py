@@ -4,7 +4,7 @@ Authors: Joseph Rios, Kyle Finter, Mckenzie Riley, Leonard Museau
 Description: Outputs possible solutions to WordBrain Puzzles
 
 Usage:
-    Command: python thread.py <puzzle-file>.txt
+    Command: python thread.py <puzzle-file>.txt <number of threads>
     File Format:
     <List of lengths of hints separated by spaces>
     <Lines of the puzzle>
@@ -15,10 +15,11 @@ import time
 import threading
 import queue
 words = []
-threadList=[]
-result=[]
+threadList = []
+result = []
+numThreads = 4
 
-def solve(puzzle,hint):
+def solve(puzzle, hint):
     """
     Input: a puzzle (list of strings) and list of hints (list of int)
     Output: a list of lists of paths that match each of the hints and map to valid english words
@@ -40,7 +41,7 @@ def solve(puzzle,hint):
     return result
         
 
-def getPaths(puzzle,hintSet,maxHint,numThreads):
+def getPaths(puzzle,hintSet,maxHint):
     """
     Helper function for getPathR
     Input: A puzzle (list of strings), a set of hints (for const time lookups), and the maxHint of the hint list
@@ -51,18 +52,27 @@ def getPaths(puzzle,hintSet,maxHint,numThreads):
     """
     result = []
     que = queue.Queue()
-    
+    threadList=[]
+    print(puzzle)
+    if(numThreads<len(puzzle)):
+        equalLength = len(puzzle)//int(numThreads)
+        puzzle = [puzzle[i:i+equalLength] for i in range(0, len(puzzle), equalLength)]
+
+    print(puzzle)
     for i in range(numThreads):
-        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,hintSet,maxHint,que])
+        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle[i],hintSet,maxHint,que])
         threadList.append(t)
         t.start()
         
     for t in threadList:
         t.join()
-    
-    return que.join()
-    
+    threadList=[]
+    for item in range(que.qsize()):
+        result.append(que.get())
+    return result
+
 def threadGetPaths(puzzle,hintSet,maxHint,que):
+    print(puzzle)
     for x in range(len(puzzle)):
         for y in range(len(puzzle[x])):
             if(puzzle[x][y]!=" "):
@@ -188,28 +198,28 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
-def loadRelevantWords(wordFile,rLst,numThreads):
+def loadRelevantWords(wordFile,rLst):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
-    l = open(wordFile).read().split('\n')
-    listOfWords = list(l)
-
-    numExtraWords = len(listOfWords)%int(numThreads)#remainder of list of words % number of threads
-    extraWords = []
-    for index in range(numExtraWords):
-        extraWords.append(listOfWords.pop())#remove words to divide without remainder
+    listOfWords = list(open(wordFile).read().split('\n'))
+    #listOfWords = list(l)
+    equalLength = len(listOfWords)//int(numThreads)
+    #numExtraWords = len(listOfWords)%int(numThreads)#remainder of list of words % number of threads
+    #extraWords = []
+    #for index in range(numExtraWords):
+    #    extraWords.append(listOfWords.pop())#remove words to divide without remainder
         
-    equalLength = int(len(listOfWords)/int(numThreads))#Length of equal parts
+    #equalLength = int(len(listOfWords)/int(numThreads))#Length of equal parts
     listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
     
     #put extra words one by one into each list to balance as close as possible
-    i=0
-    for word in extraWords:
-        listOfWords[i].append(word)
-        i+=1
-
+    #i=0
+    #for word in extraWords:
+    #    listOfWords[i].append(word)
+    #    i+=1
+    threadList=[]
     for i in range(numThreads):
         t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
         threadList.append(t)
@@ -217,6 +227,8 @@ def loadRelevantWords(wordFile,rLst,numThreads):
         
     for t in threadList:
         t.join()
+
+    threadList=[]
 
 def threadLoadWords(wordList, rLst):
     for word in wordList:
@@ -230,10 +242,9 @@ def threadLoadWords(wordList, rLst):
             else:
                 tempLst[ord(char)-65]-=1
         if(flag):
-            words.append(word)
-            
+            words.append(word)          
 
-def main(fileName, numThreads):
+def main(fileName):
     puzzle = [] #list of strings
     hint = [] #list of integers
     data = [] #list of lines from the file
@@ -248,11 +259,11 @@ def main(fileName, numThreads):
         for char in line:
             rLst[ord(char)-65]+=1
     t = time.time()
-    loadRelevantWords("words2.txt",rLst,numThreads)
-    #print(words)
+    loadRelevantWords("words2.txt",rLst)
+    print(words)
     print(len(words),"words loaded in",time.time()-t,"seconds")
-    for path in getPaths(puzzle,hint, max(hint),numThreads):
-        print(ptw(puzzle,path))
+    #for path in getPaths(puzzle,hint, max(hint)):
+    #    print(ptw(puzzle,path))
     t = time.time()
     for soln in solve(puzzle,hint):
         print(soln)
@@ -260,6 +271,7 @@ def main(fileName, numThreads):
 
 if(__name__=="__main__"):
     if(len(sys.argv)==3):
-        main(sys.argv[1], int(sys.argv[2]))
+        numThreads = int(sys.argv[2])
+        main(sys.argv[1])
     else:
         print("Invalid number of arguments")
