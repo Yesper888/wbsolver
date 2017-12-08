@@ -16,7 +16,6 @@ import threading
 import queue
 words = []
 threadList = []
-result = []
 numThreads = 4
 
 def solve(puzzle, hint):
@@ -53,14 +52,20 @@ def getPaths(puzzle,hintSet,maxHint):
     result = []
     que = queue.Queue()
     threadList=[]
+    valueRange=[]
     print(puzzle)
-    if(numThreads<len(puzzle)):
+    if(numThreads<=len(puzzle)):
         equalLength = len(puzzle)//int(numThreads)
-        puzzle = [puzzle[i:i+equalLength] for i in range(0, len(puzzle), equalLength)]
+        #valueRange = [puzzle[i:i+equalLength] for i in range(0, len(puzzle), equalLength)]
+        valueRange=[0,equalLength]
 
-    print(puzzle)
+
+    print(valueRange)
+    #
     for i in range(numThreads):
-        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle[i],hintSet,maxHint,que])
+        valueRange=[i*equalLength, equalLength + i*equalLength]
+        print(valueRange)
+        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,valueRange,hintSet,maxHint,que])
         threadList.append(t)
         t.start()
         
@@ -71,13 +76,13 @@ def getPaths(puzzle,hintSet,maxHint):
         result.append(que.get())
     return result
 
-def threadGetPaths(puzzle,hintSet,maxHint,que):
-    print(puzzle)
-    for x in range(len(puzzle)):
+def threadGetPaths(puzzle,valueRange,hintSet,maxHint,que):
+    print(valueRange)
+    for x in range(valueRange[0],valueRange[1]):
         for y in range(len(puzzle[x])):
             if(puzzle[x][y]!=" "):
+                print(puzzle[x][y])
                 que.put(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
-    #result.append(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
     return
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
