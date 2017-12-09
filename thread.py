@@ -38,7 +38,7 @@ def solve(puzzle, hint):
             for soln in solve(newPuzzle,newHint):
                 result.append([ptw(puzzle,path)]+soln)
     return result
-        
+
 
 def getPaths(puzzle,hintSet,maxHint):
     """
@@ -53,37 +53,39 @@ def getPaths(puzzle,hintSet,maxHint):
     que = queue.Queue()
     threadList=[]
     valueRange=[]
-    print(puzzle)
+    print(len(puzzle))
     if(numThreads<=len(puzzle)):
         equalLength = len(puzzle)//int(numThreads)
-        #valueRange = [puzzle[i:i+equalLength] for i in range(0, len(puzzle), equalLength)]
         valueRange=[0,equalLength]
+        for i in range(numThreads):
+            valueRange=[i*equalLength, equalLength + i*equalLength]
+            print(valueRange)
+            t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,valueRange,hintSet,maxHint,que])
+            threadList.append(t)
+            t.start()
 
-
-    print(valueRange)
-    #
-    for i in range(numThreads):
-        valueRange=[i*equalLength, equalLength + i*equalLength]
+    else:
+        equalLength=len(puzzle)
+        valueRange=[0,equalLength]
         print(valueRange)
-        t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,valueRange,hintSet,maxHint,que])
+        t = threading.Thread(target = threadGetPaths, name = "th0", args = [puzzle,valueRange,hintSet,maxHint,que])
         threadList.append(t)
         t.start()
-        
+
     for t in threadList:
         t.join()
     threadList=[]
     for item in range(que.qsize()):
         result.append(que.get())
+
+    print(result)
     return result
 
 def threadGetPaths(puzzle,valueRange,hintSet,maxHint,que):
-    print(valueRange)
     for x in range(valueRange[0],valueRange[1]):
         for y in range(len(puzzle[x])):
             if(puzzle[x][y]!=" "):
-                print(puzzle[x][y])
                 que.put(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
-    return
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
     """
@@ -122,15 +124,15 @@ def getPathR(puzzle,hintSet,maxHint,currPath):
                     result.append(currPath[:]+[(x+i,y+j)])
                 #If less than max and possible word, continue exploring
                 #Should be possible to enter both of the IFs
-                if((len(currPath)+1<maxHint) and 
+                if((len(currPath)+1<maxHint) and
                    (couldBeAWord(ptw(puzzle,currPath+[(x+i,y+j)])))):
                     #Need to make a copy of currPath
                     result+=getPathR(puzzle,hintSet,maxHint,currPath[:]+[(x+i,y+j)])
     return result
-                
+
 def remove(puzzle,path):
     """
-    Input:  A list of strings representing a puzzle, and 
+    Input:  A list of strings representing a puzzle, and
             A list of pairs representing a list path
     Output: A puzzle with the path replaced with spaces
             and shifted down.
@@ -140,6 +142,7 @@ def remove(puzzle,path):
     for i in range(len(new)):
         new[i] = list(new[i])
     #Replace all coords with a space
+    #print(path)
     for (x,y) in path:
         new[x][y] = " "
     #Shift down the elements with spaces below them
@@ -209,30 +212,20 @@ def loadRelevantWords(wordFile,rLst):
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
     listOfWords = list(open(wordFile).read().split('\n'))
-    #listOfWords = list(l)
     equalLength = len(listOfWords)//int(numThreads)
-    #numExtraWords = len(listOfWords)%int(numThreads)#remainder of list of words % number of threads
-    #extraWords = []
-    #for index in range(numExtraWords):
-    #    extraWords.append(listOfWords.pop())#remove words to divide without remainder
-        
-    #equalLength = int(len(listOfWords)/int(numThreads))#Length of equal parts
+
     listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
-    
-    #put extra words one by one into each list to balance as close as possible
-    #i=0
-    #for word in extraWords:
-    #    listOfWords[i].append(word)
-    #    i+=1
+
     threadList=[]
     for i in range(numThreads):
         t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
         threadList.append(t)
         t.start()
-        
+
     for t in threadList:
         t.join()
 
+    words.sort()
     threadList=[]
 
 def threadLoadWords(wordList, rLst):
@@ -247,7 +240,7 @@ def threadLoadWords(wordList, rLst):
             else:
                 tempLst[ord(char)-65]-=1
         if(flag):
-            words.append(word)          
+            words.append(word)
 
 def main(fileName):
     puzzle = [] #list of strings
