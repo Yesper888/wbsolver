@@ -4,7 +4,7 @@ Authors: Joseph Rios, Kyle Finter, Mckenzie Riley, Leonard Museau
 Description: Outputs possible solutions to WordBrain Puzzles
 
 Usage:
-    Command: python thread.py <puzzle-file>.txt
+    Command: python v2.1.py <puzzle-file>.txt
     File Format:
     <List of lengths of hints separated by spaces>
     <Lines of the puzzle>

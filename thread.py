@@ -53,13 +53,11 @@ def getPaths(puzzle,hintSet,maxHint):
     que = queue.Queue()
     threadList=[]
     valueRange=[]
-    print(len(puzzle))
     if(numThreads<=len(puzzle)):
         equalLength = len(puzzle)//int(numThreads)
         valueRange=[0,equalLength]
         for i in range(numThreads):
             valueRange=[i*equalLength, equalLength + i*equalLength]
-            print(valueRange)
             t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,valueRange,hintSet,maxHint,que])
             threadList.append(t)
             t.start()
@@ -67,7 +65,6 @@ def getPaths(puzzle,hintSet,maxHint):
     else:
         equalLength=len(puzzle)
         valueRange=[0,equalLength]
-        print(valueRange)
         t = threading.Thread(target = threadGetPaths, name = "th0", args = [puzzle,valueRange,hintSet,maxHint,que])
         threadList.append(t)
         t.start()
@@ -76,9 +73,8 @@ def getPaths(puzzle,hintSet,maxHint):
         t.join()
     threadList=[]
     for item in range(que.qsize()):
-        result.append(que.get())
+        result+=que.get()
 
-    print(result)
     return result
 
 def threadGetPaths(puzzle,valueRange,hintSet,maxHint,que):
@@ -142,7 +138,6 @@ def remove(puzzle,path):
     for i in range(len(new)):
         new[i] = list(new[i])
     #Replace all coords with a space
-    #print(path)
     for (x,y) in path:
         new[x][y] = " "
     #Shift down the elements with spaces below them
@@ -163,7 +158,6 @@ def remove(puzzle,path):
 
 def ptw(puzzle,path):
     #Path to word
-    #print(path)
     result = ""
     for (x,y) in path:
         result+=puzzle[x][y]
@@ -258,7 +252,6 @@ def main(fileName):
             rLst[ord(char)-65]+=1
     t = time.time()
     loadRelevantWords("words2.txt",rLst)
-    print(words)
     print(len(words),"words loaded in",time.time()-t,"seconds")
     #for path in getPaths(puzzle,hint, max(hint)):
     #    print(ptw(puzzle,path))
