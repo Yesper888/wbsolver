@@ -54,14 +54,14 @@ def getPaths(puzzle,hintSet,maxHint):
         valueRange = [0, equalLength]
         for i in range(numProcesses):
             valueRange = [i*equalLength, equalLength + i*equalLength]
-            p = [mp.Process(target = mpGetPaths, name = "mp"+str(i), args = [puzzle,valueRange,hintSet,maxHint, output])]
+            p = mp.Process(target = mpGetPaths, name = "mp"+str(i), args = [puzzle,valueRange,hintSet,maxHint, output])
             processList.append(p)
             p.start()
             
     else:
         equalLength = len(puzzle)
         valueRange = [0, equalLength]
-        p = [mp.Process(target = mpGetPaths, name = "mp0", args = [puzzle,valueRange,hintSet,maxHint, output])]
+        p = mp.Process(target = mpGetPaths, name = "mp0", args = [puzzle,valueRange,hintSet,maxHint, output])
         processList.append(p)
         p.start()
 
@@ -203,14 +203,14 @@ def loadRelevantWords(wordFile,rLst):
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
-	listOfWords = list(open(wordFile).read().split('\n'))
-	equalLength = len(listOfWords)//int(numProcesses)
+    listOfWords = list(open(wordFile).read().split('\n'))
+    equalLength = len(listOfWords)//int(numProcesses)
 	
-	listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]
-	
-	processList = []
-	for i in range(numThreads):
-        p = [mp.Process(target = mpLoadWords, name = "mp"+str(i), args = [listOfWords[i],rLst])]
+    listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]
+    
+    processList = []
+    for i in range(numProcesses):
+        p = mp.Process(target = mpLoadWords, name = "mp"+str(i), args = [listOfWords[i],rLst])
         processList.append(p)
         p.start()
 
@@ -261,7 +261,7 @@ def main(fileName):
 
 if(__name__=="__main__"):
     if(len(sys.argv)==3):
-		numProcesses = int(sys.argv[2])
+        numProcesses = int(sys.argv[2])
         main(sys.argv[1])
     else:
         print("Invalid number of arguments")
