@@ -9,7 +9,8 @@ Usage:
 """
 import sys
 import time
-import multiprocessing as mp
+from multiprocessing import Pool
+
 words = []
 processList = []
 numProcesses = 4
@@ -44,40 +45,29 @@ def getPaths(puzzle,hintSet,maxHint):
     + Works by calling getPathR on each tile with a letter in it
     + It also combines each list of paths from getPathR into result
     """
+    global p,numProcesses,words
     result = []
-    #Define an output queue
-    output = mp.Queue()
-    processList = []
-    valueRange = []
-    if(numProcesses <= len(puzzle)):
-        equalLength = len(puzzle)//int(numProcesses)
-        valueRange = [0, equalLength]
-        for i in range(numProcesses):
-            valueRange = [i*equalLength, equalLength + i*equalLength]
-            p = mp.Process(target = mpGetPaths, name = "mp"+str(i), args = [puzzle,valueRange,hintSet,maxHint, output])
-            processList.append(p)
-            p.start()
-            
-    else:
-        equalLength = len(puzzle)
-        valueRange = [0, equalLength]
-        p = mp.Process(target = mpGetPaths, name = "mp0", args = [puzzle,valueRange,hintSet,maxHint, output])
-        processList.append(p)
-        p.start()
-
-    for p in processList:
-        p.join()
-    processList = []
-    for item in range(output.qsize()):
-        result+=output.get()
-
-    return result
-
-def mpGetPaths(puzzle,valueRange,hintSet,maxHint,output):    
-    for x in range(valueRange[0],valueRange[1]):
+    arr =[]
+    for x in range(len(puzzle)):
         for y in range(len(puzzle[x])):
             if(puzzle[x][y]!=" "):
-                output.put(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
+                arr.append((x,y))
+    partitions = distribute(arr,numProcesses)
+    argList = []
+    for each in partitions:
+        argList.append((puzzle,hintSet,maxHint,each,words))
+    result2 = p.starmap(mpGetPaths,argList)
+    for lst in result2:
+        result+=lst
+    return result
+
+def mpGetPaths(puzzle,hintSet,maxHint,coords,wordList):
+    global words
+    words = wordList
+    localResult = []
+    for each in coords:
+        localResult+=getPathR(puzzle,hintSet,maxHint,[each])
+    return localResult
     
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
@@ -198,41 +188,51 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
+def distribute(lst,n):
+    #Returns a list of n partitions of a list
+    l = len(lst)//n
+    index = 0
+    result = []
+    for i in range(n):
+        if(i<len(lst)%n):
+            result.append(lst[index:index+l+1])
+            index+=l+1
+        else:
+            result.append(lst[index:index+l])
+            index+=l
+    return result
+
 def loadRelevantWords(wordFile,rLst):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
+    global p,numProcesses,words
     listOfWords = list(open(wordFile).read().split('\n'))
-    equalLength = len(listOfWords)//int(numProcesses)
-	
-    listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]
-    
-    processList = []
-    for i in range(numProcesses):
-        p = mp.Process(target = mpLoadWords, name = "mp"+str(i), args = [listOfWords[i],rLst])
-        processList.append(p)
-        p.start()
-
-    for p in processList:
-        p.join()
-
+    listOfWords = distribute(listOfWords,numProcesses)
+    argsLst = []
+    for each in listOfWords:
+        argsLst.append((each,rLst))
+    result = p.starmap(mpLoadWords,argsLst)
+    for each in result:
+        words+=each
     words.sort()
-    processList=[]
 
-def mpLoadWords(wordList, rLst):	
-        for word in wordList:
-            tempLst = rLst[:]
-            word = word.strip().upper()#should already be uppercase
-            flag = True
-            for char in word:
-                if(tempLst[ord(char)-65]==0):
-                    flag = False
-                    break
-                else:
-                    tempLst[ord(char)-65]-=1
-            if(flag):
-                words.append(word)
+def mpLoadWords(wordList,rLst):
+    localResult = []
+    for word in wordList:
+        tempLst = rLst[:]
+        word = word.strip().upper()#should already be uppercase
+        flag = True
+        for char in word:
+            if(tempLst[ord(char)-65]==0):
+                flag = False
+                break
+            else:
+                tempLst[ord(char)-65]-=1
+        if(flag):
+            localResult.append(word)
+    return localResult
                     
 
 def main(fileName):
@@ -262,6 +262,7 @@ def main(fileName):
 if(__name__=="__main__"):
     if(len(sys.argv)==3):
         numProcesses = int(sys.argv[2])
+        p = Pool(numProcesses)
         main(sys.argv[1])
     else:
         print("Invalid number of arguments")
