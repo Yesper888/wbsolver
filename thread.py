@@ -51,37 +51,37 @@ def getPaths(puzzle,hintSet,maxHint):
     """
     result = []
     que = queue.Queue()
+    output = queue.Queue()
     threadList=[]
-    valueRange=[]
+
+    for x in range(len(puzzle)):
+        for y in range(len(puzzle[x])):
+            que.put((x,y))
     if(numThreads<=len(puzzle)):
-        equalLength = len(puzzle)//int(numThreads)
-        valueRange=[0,equalLength]
         for i in range(numThreads):
-            valueRange=[i*equalLength, equalLength + i*equalLength]
-            t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,valueRange,hintSet,maxHint,que])
+            t = threading.Thread(target = threadGetPaths, name = "th"+str(i), args = [puzzle,hintSet,maxHint,que,output])
             threadList.append(t)
             t.start()
 
     else:
-        equalLength=len(puzzle)
-        valueRange=[0,equalLength]
-        t = threading.Thread(target = threadGetPaths, name = "th0", args = [puzzle,valueRange,hintSet,maxHint,que])
+        t = threading.Thread(target = threadGetPaths, name = "th0", args = [puzzle,hintSet,maxHint,que,output])
         threadList.append(t)
         t.start()
 
     for t in threadList:
         t.join()
     threadList=[]
-    for item in range(que.qsize()):
-        result+=que.get()
-
+    for x in range(output.qsize()):
+        result+=output.get()
     return result
 
-def threadGetPaths(puzzle,valueRange,hintSet,maxHint,que):
-    for x in range(valueRange[0],valueRange[1]):
-        for y in range(len(puzzle[x])):
-            if(puzzle[x][y]!=" "):
-                que.put(getPathR(puzzle,hintSet,maxHint,[(x,y)]))
+def threadGetPaths(puzzle,hintSet,maxHint,que,output):
+    localResults=[]
+    while(not que.empty()):
+        x,y=que.get()
+        if(puzzle[x][y]!=" "):
+            localResults+=getPathR(puzzle,hintSet,maxHint,[(x,y)])
+    output.put(localResults)
 
 def getPathR(puzzle,hintSet,maxHint,currPath):
     """
