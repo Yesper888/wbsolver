@@ -12,6 +12,7 @@ import time
 from multiprocessing import Pool
 
 words = []
+wordSet = set()
 processList = []
 numProcesses = 4
 
@@ -44,8 +45,9 @@ def solve(puzzle,hint):
     return result
         
 def topmpSolve(puzzle,hint,wordList):
-    global words
+    global words,wordSet
     words = wordList
+    wordSet = set(words)
     return mpSolve(puzzle,hint)
 
 
@@ -171,6 +173,8 @@ def ptw(puzzle,path):
     return result
 
 def isAWord(s):
+    return s in wordSet
+"""
     if(' ' in s):
         return False
     first = 0
@@ -187,7 +191,7 @@ def isAWord(s):
         else:
             first = mid+1
     return found
-
+"""
 def couldBeAWord(s):
     if(' ' in s):
         return False
@@ -226,7 +230,7 @@ def loadRelevantWords(wordFile,puzzle,hint):
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
-    global p,numProcesses,words
+    global p,numProcesses,words,wordSet
     listOfWords = list(open(wordFile).read().split('\n'))
     listOfWords = distribute(listOfWords,numProcesses)
     argsLst = []
@@ -236,20 +240,18 @@ def loadRelevantWords(wordFile,puzzle,hint):
     for each in result:
         words+=each
     words.sort()
+    wordSet = set(words)
 
 def mpLoadWords(wordList,puzzle,hint):
     hintSet = set(hint)
-    colSet = [set() for i in range(len(puzzle[0]))]
     rLst = [0 for i in range(26)]
     for line in puzzle:
         for n,char in enumerate(line):
             rLst[ord(char)-65]+=1
-            colSet[n].add(char)
     localResult = []
     for word in wordList:
         tempLst = rLst[:]
         word = word.strip().upper()#should already be uppercase
-        prev = list(range(len(puzzle[0]))) #All the columns
         flag = True
         for char in word:
             if(tempLst[ord(char)-65]==0):
@@ -257,19 +259,6 @@ def mpLoadWords(wordList,puzzle,hint):
                 break
             else:
                 tempLst[ord(char)-65]-=1
-                flag2 = False
-                nextSet = set()
-                for col in prev:
-                    if(char in colSet[col]):
-                        nextSet.add(col)
-                        nextSet.add(col-1)
-                        nextSet.add(col+1)
-                if(flag2):
-                    flag = False
-                    break
-                nextSet.discard(-1)
-                nextSet.discard(len(puzzle[0]))
-                prev = list(nextSet)
         if(flag and len(word) in hintSet):
             localResult.append(word)
     return localResult

@@ -12,18 +12,23 @@ Usage:
                -mpXX for XX processes of mp.py
     amt-flag:  -all for every file
                -eXX for XX of each puzzle size
+               -mXX for all puzzles less than size XX
 """
 import sys
 import time
 import csv
+from multiprocessing import Pool
 import serial
 import thread
 import mp
 
+srl = False
+thr = False
+mpr = False
 amt = None
+maxSize = None
 
 def test(wordFile,numTrials):
-    global words
     solutions = []
     data = []
     with open("solutions.txt",'r') as f:
@@ -52,14 +57,24 @@ def test(wordFile,numTrials):
             sizes[sz] = 1
         else:
             sizes[sz]+=1
-        if(amt!=False and sizes[sz]>amt):
+        if(amt!=None and sizes[sz]>amt):
+            continue
+        elif(maxSize!=None and sz>maxSize):
             continue
         else:
             puzzleSize.append(sz)
         #Average Load Time for numTrials
         total = 0
         for j in range(numTrials):
-            words = []
+            if(srl):
+                serial.words = []
+                serial.wordSet = set()
+            elif(thr):
+                thread.words = []
+                thread.wordSet = set()
+            elif(mpr):
+                mp.words = []
+                mp.wordSet = set()
             t = time.time()
             loadWords(wordFile,puzzle,hint)
             total+=(time.time()-t)
@@ -99,12 +114,9 @@ def recordResults(puzzleSize,loadSize,loadTime,solveTime,success):
             success[i] = 0
     with open("results.csv",'w',newline='') as csvfile:
         w = csv.writer(csvfile,delimiter=',', quotechar='"', quoting=csv.QUOTE_NONE)
-        w.writerow(["Puzzle Size"]+puzzleSize)
-        w.writerow(["Load Size"]+loadSize)
-        w.writerow(["Load Time"]+loadTime)
-        w.writerow(["Solve Time"]+solveTime)
-        w.writerow(["Success"]+success)
-
+        w.writerow(["Puzzle Size","Load Size","Load Time","Solve Time","Success"])
+        for i in range(len(puzzleSize)):
+            w.writerow([puzzleSize[i],loadSize[i],loadTime[i],solveTime[i],success[i]])
 
 if(__name__=="__main__"):
     if(len(sys.argv)==5):
@@ -112,25 +124,28 @@ if(__name__=="__main__"):
         if(sys.argv[2]=="-serial"):
             loadWords = serial.loadRelevantWords
             solve = serial.solve
-            words = serial.words
+            srl = True
         elif(sys.argv[2][:3]=="-th"):
             loadWords = thread.loadRelevantWords
             solve = thread.solve
-            words = thread.words
+            thr = True
             thread.numThreads = int(sys.argv[2][3:])
         elif(sys.argv[2][:3]=="-mp"):
             loadWords = mp.loadRelevantWords
             solve = mp.solve
-            words = mp.words
+            mpr = True
             mp.numProcesses = int(sys.argv[2][3:])
+            mp.p = Pool(mp.numProcesses)
         else:
             print("Invalid Type Flag")
             sys.exit()
         #Check Amount Flag
         if(sys.argv[3]=="-all"):
-            amt = False
+            amt = None
         elif(sys.argv[3][:2]=="-e"):
             amt = int(sys.argv[3][2:])
+        elif(sys.argv[3][:2]=="-m"):
+            maxSize = int(sys.argv[3][2:])
         else:
             print("Invalid Amount Flag")
             sys.exit()
@@ -145,3 +160,4 @@ if(__name__=="__main__"):
         print("amt-flag:")
         print("\t-all for every file")
         print("\t-eXX for XX of each puzzle size")
+        print("\t-mXX for all puzzles <= size XX")

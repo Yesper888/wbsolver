@@ -15,6 +15,7 @@ import time
 import threading
 import queue
 words = []
+wordSet = set()
 threadList = []
 numThreads = 4
 
@@ -164,6 +165,8 @@ def ptw(puzzle,path):
     return result
 
 def isAWord(s):
+    return s in wordSet
+"""
     if(' ' in s):
         return False
     first = 0
@@ -180,7 +183,7 @@ def isAWord(s):
         else:
             first = mid+1
     return found
-
+"""
 def couldBeAWord(s):
     if(' ' in s):
         return False
@@ -200,7 +203,7 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
-def loadRelevantWords(wordFile,rLst):
+def loadRelevantWords(wordFile,puzzle,hint):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
@@ -212,7 +215,7 @@ def loadRelevantWords(wordFile,rLst):
 
     threadList=[]
     for i in range(numThreads):
-        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
+        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],puzzle,hint])
         threadList.append(t)
         t.start()
 
@@ -222,7 +225,12 @@ def loadRelevantWords(wordFile,rLst):
     words.sort()
     threadList=[]
 
-def threadLoadWords(wordList, rLst):
+def threadLoadWords(wordList,puzzle,hint):
+    rLst = [0 for i in range(26)]
+    for line in puzzle:
+        for char in line:
+            rLst[ord(char)-65]+=1
+    hintSet = set(hint)
     for word in wordList:
         tempLst = rLst[:]
         word = word.strip().upper()#should already be uppercase
@@ -235,6 +243,7 @@ def threadLoadWords(wordList, rLst):
                 tempLst[ord(char)-65]-=1
         if(flag):
             words.append(word)
+            wordSet.add(word)
 
 def main(fileName):
     puzzle = [] #list of strings
@@ -245,13 +254,10 @@ def main(fileName):
         data = f.readlines()
     hint = list(map(lambda x: int(x),data[0].split()))
     puzzle = list(map(lambda x: x.strip().upper(), data[1:]))
-    rSet = set() #means "Relevant Set"
-    rLst = [0 for i in range(26)]
-    for line in puzzle:
-        for char in line:
-            rLst[ord(char)-65]+=1
+
     t = time.time()
-    loadRelevantWords("words2.txt",rLst)
+    loadRelevantWords("words2.txt",puzzle,hint)
+
     print(len(words),"words loaded in",time.time()-t,"seconds")
     #for path in getPaths(puzzle,hint, max(hint)):
     #    print(ptw(puzzle,path))
