@@ -1,7 +1,7 @@
 """
 Author: Joseph Rios
 
-Description: 
+Description:
     Tests to see if a WB puzzle outputs the right solution
     and records the runtimes for filtering and solving.
 

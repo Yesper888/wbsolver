@@ -1,11 +1,14 @@
 """
 Authors: Joseph Rios, Kyle Finter, Mckenzie Riley, Leonard Museau
+
 Description: Outputs possible solutions to WordBrain Puzzles
+
 Usage:
     Command: python thread.py <puzzle-file>.txt <number of threads>
     File Format:
     <List of lengths of hints separated by spaces>
     <Lines of the puzzle>
+
 """
 import sys
 import time
@@ -43,6 +46,7 @@ def getPaths(puzzle,hintSet,maxHint):
     Helper function for getPathR
     Input: A puzzle (list of strings), a set of hints (for const time lookups), and the maxHint of the hint list
     Output: A list of paths that are valid words (appropriate length and an english word)
+
     + Works by calling getPathR on each tile with a letter in it
     + It also combines each list of paths from getPathR into result
     """
@@ -253,6 +257,7 @@ def main(fileName):
 
     t = time.time()
     loadRelevantWords("words2.txt",puzzle,hint)
+
     print(len(words),"words loaded in",time.time()-t,"seconds")
     #for path in getPaths(puzzle,hint, max(hint)):
     #    print(ptw(puzzle,path))
