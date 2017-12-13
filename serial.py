@@ -13,6 +13,7 @@ Usage:
 import sys
 import time
 words = []
+wordSet = set()
 
 def solve(puzzle,hint):
     """
@@ -134,6 +135,8 @@ def ptw(puzzle,path):
     return result
 
 def isAWord(s):
+    return s in wordSet
+"""
     if(' ' in s):
         return False
     first = 0
@@ -150,7 +153,7 @@ def isAWord(s):
         else:
             first = mid+1
     return found
-
+"""
 def couldBeAWord(s):
     if(' ' in s):
         return False
@@ -176,17 +179,14 @@ def loadRelevantWords(wordFile,puzzle,hint):
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
     rLst = [0 for i in range(26)]
-    colSet = [set() for i in range(len(puzzle[0]))]
     for line in puzzle:
         for n,char in enumerate(line):
             rLst[ord(char)-65]+=1
-            colSet[n].add(char)
     hintSet = set(hint)
     with open(wordFile,'r') as f:
         for line in f:
             tempLst = rLst[:]
             line = line.strip().upper()#should already be uppercase
-            prev = list(range(len(puzzle[0]))) #All the columns
             flag = True
             for char in line:
                 if(tempLst[ord(char)-65]==0):
@@ -194,21 +194,9 @@ def loadRelevantWords(wordFile,puzzle,hint):
                     break
                 else:
                     tempLst[ord(char)-65]-=1
-                    flag2 = False
-                    nextSet = set()
-                    for col in prev:
-                        if(char in colSet[col]):
-                            nextSet.add(col)
-                            nextSet.add(col-1)
-                            nextSet.add(col+1)
-                    if(flag2):
-                        flag = False
-                        break
-                    nextSet.discard(-1)
-                    nextSet.discard(len(puzzle[0]))
-                    prev = list(nextSet)
             if(flag and len(line) in hintSet):
                 words.append(line)
+                wordSet.add(line)
                     
 
 def main(fileName):
