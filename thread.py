@@ -199,7 +199,7 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
-def loadRelevantWords(wordFile,rLst):
+def loadRelevantWords(wordFile,puzzle,hint):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
@@ -211,7 +211,7 @@ def loadRelevantWords(wordFile,rLst):
 
     threadList=[]
     for i in range(numThreads):
-        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
+        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],puzzle,hint])
         threadList.append(t)
         t.start()
 
