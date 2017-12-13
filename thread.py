@@ -200,19 +200,34 @@ def couldBeAWord(s):
             first = mid+1
     return found
 
-def loadRelevantWords(wordFile,rLst):
+def distribute(lst,n):
+    #Returns a list of n partitions of a list
+    l = len(lst)//n
+    index = 0
+    result = []
+    for i in range(n):
+        if(i<len(lst)%n):
+            result.append(lst[index:index+l+1])
+            index+=l+1
+        else:
+            result.append(lst[index:index+l])
+            index+=l
+    return result
+
+def loadRelevantWords(wordFile,puzzle,hint):
     #Current Version Takes less than 0.1s
     #Consider Revising to a hard anagram, may not be worth it
     #For Example: If a puzzle has only 1 't' in it, don't include
     #             words with 2 or more t's
+    hintSet = set(hint)
     listOfWords = list(open(wordFile).read().split('\n'))
-    equalLength = len(listOfWords)//int(numThreads)
-
-    listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
-
+    #equalLength = len(listOfWords)//int(numThreads)
+    listOfWords = distribute(listOfWords,numThreads)
+    #listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
+    #print(listOfWords)
     threadList=[]
     for i in range(numThreads):
-        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],rLst])
+        t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],puzzle,hintSet])
         threadList.append(t)
         t.start()
 
@@ -222,10 +237,18 @@ def loadRelevantWords(wordFile,rLst):
     words.sort()
     threadList=[]
 
-def threadLoadWords(wordList, rLst):
+def threadLoadWords(wordList,puzzle,hintSet):
+    colSet = [set() for i in range(len(puzzle[0]))]
+    rLst = [0 for i in range(26)]
+    for line in puzzle:
+        for n,char in enumerate(line):
+            rLst[ord(char)-65]+=1
+            colSet[n].add(char)
+    localResult = []
     for word in wordList:
         tempLst = rLst[:]
         word = word.strip().upper()#should already be uppercase
+        prev = list(range(len(puzzle[0]))) #All the columns
         flag = True
         for char in word:
             if(tempLst[ord(char)-65]==0):
@@ -233,8 +256,33 @@ def threadLoadWords(wordList, rLst):
                 break
             else:
                 tempLst[ord(char)-65]-=1
-        if(flag):
+                flag2 = False
+                nextSet = set()
+                for col in prev:
+                    if(char in colSet[col]):
+                        nextSet.add(col)
+                        nextSet.add(col-1)
+                        nextSet.add(col+1)
+                if(flag2):
+                    flag = False
+                    break
+                nextSet.discard(-1)
+                nextSet.discard(len(puzzle[0]))
+                prev = list(nextSet)
+        if(flag and len(word) in hintSet):
             words.append(word)
+    # for word in wordList:
+    #     tempLst = rLst[:]
+    #     word = word.strip().upper()#should already be uppercase
+    #     flag = True
+    #     for char in word:
+    #         if(tempLst[ord(char)-65]==0):
+    #             flag = False
+    #             break
+    #         else:
+    #             tempLst[ord(char)-65]-=1
+    #     if(flag and len(word) in hintSet):
+    #         words.append(word)
 
 def main(fileName):
     puzzle = [] #list of strings
@@ -245,20 +293,16 @@ def main(fileName):
         data = f.readlines()
     hint = list(map(lambda x: int(x),data[0].split()))
     puzzle = list(map(lambda x: x.strip().upper(), data[1:]))
-    rSet = set() #means "Relevant Set"
-    rLst = [0 for i in range(26)]
-    for line in puzzle:
-        for char in line:
-            rLst[ord(char)-65]+=1
-    t = time.time()
-    loadRelevantWords("words2.txt",rLst)
-    print(len(words),"words loaded in",time.time()-t,"seconds")
+    t1 = time.time()
+    loadRelevantWords("words2.txt",puzzle,hint)
+    print(len(words),"words loaded in",time.time()-t1,"seconds")
     #for path in getPaths(puzzle,hint, max(hint)):
     #    print(ptw(puzzle,path))
-    t = time.time()
+    t2 = time.time()
     for soln in solve(puzzle,hint):
         print(soln)
-    print("Solved in",time.time()-t,"seconds")
+    print("Solved in",time.time()-t2,"seconds")
+    print("Total time:",time.time()-t1,"seconds")
 
 if(__name__=="__main__"):
     if(len(sys.argv)==3):
