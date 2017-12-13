@@ -185,8 +185,10 @@ def loadRelevantWords(wordFile,puzzle,hint):
     hintSet = set(hint)
     with open(wordFile,'r') as f:
         for line in f:
-            tempLst = rLst[:]
             line = line.strip().upper()#should already be uppercase
+            if(len(line) not in hintSet):
+                continue
+            tempLst = rLst[:]
             flag = True
             for char in line:
                 if(tempLst[ord(char)-65]==0):
@@ -194,7 +196,7 @@ def loadRelevantWords(wordFile,puzzle,hint):
                     break
                 else:
                     tempLst[ord(char)-65]-=1
-            if(flag and len(line) in hintSet):
+            if(flag):
                 words.append(line)
                 wordSet.add(line)
                     
