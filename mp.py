@@ -250,8 +250,10 @@ def mpLoadWords(wordList,puzzle,hint):
             rLst[ord(char)-65]+=1
     localResult = []
     for word in wordList:
-        tempLst = rLst[:]
         word = word.strip().upper()#should already be uppercase
+        if(len(word) not in hintSet):
+            continue
+        tempLst = rLst[:]
         flag = True
         for char in word:
             if(tempLst[ord(char)-65]==0):
@@ -259,7 +261,7 @@ def mpLoadWords(wordList,puzzle,hint):
                 break
             else:
                 tempLst[ord(char)-65]-=1
-        if(flag and len(word) in hintSet):
+        if(flag):
             localResult.append(word)
     return localResult
                     

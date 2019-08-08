@@ -212,7 +212,8 @@ def loadRelevantWords(wordFile,puzzle,hint):
     equalLength = len(listOfWords)//int(numThreads)
 
     listOfWords = [listOfWords[i:i+equalLength] for i in range(0, len(listOfWords), equalLength)]#List of lists using equal parts
-
+    listOfWords[0].extend(listOfWords[-1])
+    listOfWords.pop()
     threadList=[]
     for i in range(numThreads):
         t = threading.Thread(target = threadLoadWords, name = "th"+str(i), args = [listOfWords[i],puzzle,hint])
